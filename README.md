@@ -49,7 +49,7 @@ After installation, you can use the provided command-line tools:
 folly-api https://api.openai.com/v1 --api-key your_openai_api_key --model gpt-4 <config>.json --port 4000 --log out.json
 
 # Start the API server (Ollama example)
-folly-api http://localhost:11434/v1 --model llama3.2 <config>.json --port 4000 --log out.json
+folly-api http://localhost:11434/v1 --model llama3.1 <config>.json --port 4000 --log out.json
 
 # Start the UI server (automatically opens in browser)
 folly-ui http://localhost:4000 --port 5001
@@ -74,11 +74,11 @@ folly-ui http://localhost:4000 --port 5001 --no-browser
 1. [Install Ollama](https://ollama.ai/download)
 2. Pull your desired model:
    ```bash
-   ollama pull llama3.2
+   ollama run llama3.1
    ```
 3. Start the API server with:
    ```bash
-   folly-api http://localhost:11434/v1 --model llama3.2 prompt_injection_masterclass.json
+   folly-api http://localhost:11434/v1 --model llama3.1 prompt_injection_masterclass.json
    ```
 4. Available models depend on what you've pulled with Ollama
 
