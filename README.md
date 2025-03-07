@@ -1,9 +1,11 @@
-# 🏰 Folly - LLM Prompt Injection Testing
+| 🏰 Folly - LLM Prompt Injection Testing - A Flask-based tool for testing prompt injection and jailbreaking attacks against different LLM APIs.
+| --- |
 
-A Flask-based tool for testing prompt injection and jailbreaking attacks against different LLM APIs.
-![Folly Web UI](Folly.png)
 
-![Folly Web UI](folly-gif.gif)
+<div align="center">
+  <img src="Folly.png" alt="Folly UI Overview" width="70%">
+  <p><em>The Folly challenge interface</em></p>
+</div>
 
 
 ## ✨ Overview
@@ -69,6 +71,11 @@ Open your web browser and navigate to: http://localhost:5001
    python api.py http://localhost:11434/v1 --model llama3.2 prompt_injection_masterclass.json
    ```
 4. Available models depend on what you've pulled with Ollama
+
+<div align="center">
+  <img src="folly-gif.gif" alt="System Prompt Extraction Challenge" width="75%">
+  <p><em>Example of using Folly</em></p>
+</div>
 
 ## 🛠️ Creating Custom Challenges
 
