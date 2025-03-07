@@ -32,7 +32,7 @@ pip install -r requirements.txt
 python api.py https://api.openai.com/v1 --api-key your_openai_api_key --model gpt-4 <path to config json>
 
 # For Ollama (locally running)
-python api.py http://localhost:11434/v1 --model llama3.2 <path to config json>
+python api.py http://localhost:11434/v1 --model llama3.1 <path to config json>
 
 # For any other API endpoint
 python api.py https://your-api-endpoint/v1 --api-key your_api_key --model your_model_name <path to config json>
@@ -64,7 +64,7 @@ Open your web browser and navigate to: http://localhost:5001
 1. [Install Ollama](https://ollama.ai/download)
 2. Pull your desired model:
    ```bash
-   ollama pull llama3.2
+   ollama run llama3.1
    ```
 3. Start the API server with:
    ```bash
