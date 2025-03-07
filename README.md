@@ -6,8 +6,6 @@
   <p><em>The Folly challenge interface</em></p>
 </div>
 
-A Flask-based tool for testing prompt injection and jailbreaking attacks against different LLM APIs.
-
 ## ✨ Overview
 
 This tool provides:
