@@ -2,6 +2,9 @@
 
 A Flask-based tool for testing prompt injection and jailbreaking attacks against different LLM APIs.
 
+![Folly Web UI](folly-gif.gif)
+
+
 ## ✨ Overview
 
 This tool provides:
