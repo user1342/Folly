@@ -14,11 +14,6 @@ This tool provides:
 - ⚙️ Configuration-based challenge definitions
 - 🛡️ Support for various prompt injection and jailbreaking techniques
 
-<div align="center">
-  <img src="screenshots/ui_overview.png" alt="Folly UI Overview" width="70%">
-  <p><em>The Folly challenge interface showing the available challenges</em></p>
-</div>
-
 ## 📦 Installation
 
 ### From Source
