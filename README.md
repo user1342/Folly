@@ -1,6 +1,7 @@
 # 🏰 Folly - LLM Prompt Injection Testing
 
 A Flask-based tool for testing prompt injection and jailbreaking attacks against different LLM APIs.
+![Folly Web UI](Folly.png)
 
 ![Folly Web UI](folly-gif.gif)
 
