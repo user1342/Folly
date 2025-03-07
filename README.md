@@ -29,7 +29,7 @@ pip install -r requirements.txt
 
 ```bash
 # For OpenAI API
-python api.py https://api.openai.com/v1 --api-key your_openai_api_key --model gpt-4 <path to config json>
+python api.py https://api.openai.com/v1 --api-key <your_openai_api_key> --model gpt-4 <path to config json>
 
 # For Ollama (locally running)
 python api.py http://localhost:11434/v1 --model llama3.1 <path to config json>
@@ -55,7 +55,7 @@ Open your web browser and navigate to: http://localhost:5001
 1. Get your API key from the [OpenAI Platform](https://platform.openai.com/account/api-keys)
 2. Start the API server with:
    ```bash
-   python api.py https://api.openai.com/v1 --api-key sk-your-key-here --model gpt-4 prompt_injection_masterclass.json
+   python api.py https://api.openai.com/v1 --api-key <key-here> --model gpt-4 <config json path>
    ```
 3. Available models include: `gpt-3.5-turbo`, `gpt-4`, `gpt-4-turbo`
 
@@ -68,9 +68,8 @@ Open your web browser and navigate to: http://localhost:5001
    ```
 3. Start the API server with:
    ```bash
-   python api.py http://localhost:11434/v1 --model llama3.2 prompt_injection_masterclass.json
+   python api.py http://localhost:11434/v1 --model llama3.1 <config json path>
    ```
-4. Available models depend on what you've pulled with Ollama
 
 <div align="center">
   <img src="folly-gif.gif" alt="System Prompt Extraction Challenge" width="75%">
