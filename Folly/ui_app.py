@@ -8,6 +8,9 @@ It handles user interface, form submission, and result display.
 import argparse
 import os
 import requests
+import threading
+import time
+import webbrowser
 from typing import Dict, List, Optional, Any, Union
 import uuid
 
@@ -493,6 +496,19 @@ def create_app(ui: ChallengeUI) -> Flask:
     
     return app
 
+def open_browser(port: int):
+    """
+    Open the web browser after a short delay to allow Flask to start.
+    
+    Args:
+        port: Port number where the app is running
+    """
+    # Wait for Flask to start
+    time.sleep(1.0)
+    url = f"http://localhost:{port}"
+    webbrowser.open(url)
+    print(f"Opening browser at {url}")
+
 def main() -> int:
     """
     Main entry point for the LLM Challenge UI.
@@ -505,12 +521,19 @@ def main() -> int:
     parser = argparse.ArgumentParser(description='LLM Challenge UI')
     parser.add_argument('api_url', help='URL of the LLM Challenge API (e.g., http://localhost:5000)')
     parser.add_argument('--port', '-p', type=int, default=5001, help='Port to run the UI server (default: 5001)')
+    parser.add_argument('--no-browser', action='store_true', help='Do not open browser automatically')
     
     args = parser.parse_args()
     
     try:
         ui = ChallengeUI(args.api_url)
         app = create_app(ui)
+        
+        # Start browser in a separate thread if not disabled
+        if not args.no_browser:
+            threading.Thread(target=open_browser, args=(args.port,), daemon=True).start()
+        
+        # Start the Flask app
         app.run(debug=True, host='0.0.0.0', port=args.port)
         
     except Exception as e:
