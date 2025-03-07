@@ -1,0 +1,541 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ challenge.name }} - LLM Challenge{% endblock %}
+
+{% block content %}
+<style>
+    /* Dark mode styles for challenge interface */
+    @media (prefers-color-scheme: dark) {
+        .input-box {
+            background-color: #2d2d2d;
+            color: #e0e0e0;
+            border-color: #505050;
+        }
+        
+        .input-box:focus {
+            background-color: #3a3a3a;
+            border-color: #6c757d;
+            box-shadow: 0 0 0 0.2rem rgba(130, 138, 145, 0.25);
+        }
+        
+        .input-box::placeholder {
+            color: #888;
+        }
+        
+        .message-bubble {
+            background-color: #2d2d2d;
+        }
+        
+        .user-message {
+            color: #e0e0e0;
+        }
+        
+        .assistant-message {
+            color: #e0e0e0;
+        }
+        
+        .message-header {
+            color: #cccccc;
+        }
+        
+        .api-commands-panel {
+            background-color: #222;
+            border-color: #444;
+        }
+        
+        .code-block {
+            background-color: #2d2d2d;
+            border-color: #444;
+        }
+        
+        .code {
+            color: #e0e0e0;
+        }
+        
+        .api-tab {
+            background-color: #333;
+            color: #ccc;
+            border-color: #444;
+        }
+        
+        .api-tab.active {
+            background-color: #444;
+            color: #fff;
+        }
+        
+        .code-header {
+            background-color: #333;
+            border-color: #444;
+        }
+        
+        .progress-container {
+            background-color: #333;
+        }
+        
+        .send-button, .reset-button {
+            background-color: #333;
+            color: #e0e0e0;
+            border-color: #444;
+        }
+        
+        .send-button:hover, .reset-button:hover {
+            background-color: #444;
+        }
+        
+        .help-container {
+            background-color: #333;
+            border-color: #444;
+        }
+        
+        .help-content {
+            color: #e0e0e0;
+        }
+        
+        /* Match styling for dark mode */
+        .match-text, .match-value {
+            color: #e0e0e0;
+        }
+        
+        .validation-config {
+            color: #bbb;
+        }
+    }
+</style>
+
+{% if challenge %}
+    <div class="challenge-info">
+        <div class="container">
+            <div class="challenge-header">
+                <div class="challenge-title">{{ challenge.name }}</div>
+                <!-- Help button - only disabled if there's no help field -->
+                <button id="help-button" class="help-button{% if challenge.help is none %} disabled{% endif %}" 
+                        title="{% if challenge.help is none %}No hint available{% else %}Show hint{% endif %}" 
+                        {% if challenge.help is none %}disabled{% endif %}>
+                    <i class="bi bi-question-circle"></i> Hint
+                </button>
+            </div>
+            <p class="mb-0">{{ challenge.description }}</p>
+            
+            <!-- Add help text container (hidden by default) -->
+            {% if challenge.help %}
+            <div id="help-container" class="help-container">
+                <div class="help-content">
+                    <i class="bi bi-lightbulb"></i>
+                    <span>{{ challenge.help }}</span>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="chat-container">
+        <!-- Initial system message -->
+        <div class="message-row assistant">
+            <div class="message-content">
+                <div class="message-header">Assistant</div>
+                <div class="message-bubble">
+                    <div class="assistant-message">{{ challenge.input }}</div>
+                </div>
+                {% if history|length == 0 %}
+                    <div class="hint-text">
+                        <i class="bi bi-info-circle"></i> 
+                        {% if challenge.answers %}
+                            This challenge requires crafting prompts to make the AI respond with specific keywords.
+                        {% else %}
+                            This challenge requires crafting prompts to make the AI perform specific actions.
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Conversation history -->
+        {% for interaction in history %}
+            <div class="message-row user">
+                <div class="message-content">
+                    <div class="message-header">You</div>
+                    <div class="message-bubble">
+                        <div class="user-message">{{ interaction.input }}</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="message-row assistant">
+                <div class="message-content">
+                    <div class="message-header">
+                        Assistant
+                        {% if interaction.status == "failed" %}
+                            <span class="status-badge error">{{ interaction.reason }}</span>
+                        {% elif interaction.status == "error" %}
+                            <span class="status-badge warning">{{ interaction.reason }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="message-bubble">
+                        <div class="assistant-message">{{ interaction.output or "No response" }}</div>
+                    </div>
+                    
+                    {% if interaction.validation %}
+                        <div class="validation-card {% if interaction.validation.valid %}validation-success{% else %}validation-failure{% endif %}">
+                            <div class="validation-status {% if interaction.validation.valid %}success{% else %}failure{% endif %}">
+                                {% if interaction.validation.valid %}
+                                    <i class="bi bi-check-circle-fill"></i>
+                                    Challenge Passed!
+                                {% else %}
+                                    <i class="bi bi-x-circle-fill"></i>
+                                    Challenge Failed
+                                {% endif %}
+                            </div>
+                            
+                            <div class="validation-details">
+                                <p>{{ interaction.validation.reason }}</p>
+                                
+                                {% if interaction.validation.match_percent is defined %}
+                                    <div>Match: {{ interaction.validation.match_percent }}% (Threshold: {{ challenge.fuzzy_match_score|default(0) }}%)</div>
+                                {% endif %}
+                                
+                                <div class="keyword-results">
+                                    {% if interaction.validation.found_keywords %}
+                                        <div class="keyword-badges">
+                                            {% for keyword in interaction.validation.found_keywords %}
+                                                <span class="keyword success">{{ keyword }}</span>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    
+                                    {% if interaction.validation.missing_keywords %}
+                                        <div class="keyword-badges">
+                                            {% for keyword in interaction.validation.missing_keywords %}
+                                                <span class="keyword missing">{{ keyword }}</span>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- Added validation info section with improved match type detection -->
+                                <div class="validation-info">
+                                    <div>Challenge is using: 
+                                        {% if challenge.match_type == "fuzzy" or interaction.validation.match_type == "fuzzy" %}
+                                            <span class="validation-config">Fuzzy matching ({{ challenge.fuzzy_match_score }}% threshold)</span>
+                                        {% else %}
+                                            <span class="validation-config">Direct keyword matching</span>
+                                        {% endif %}
+                                    </div>
+                                    <div>
+                                        Looking for: 
+                                        <span class="validation-config">
+                                            {% if challenge.answers|length == 1 and challenge.answers[0]|length > 60 %}
+                                                {{ challenge.answers[0]|truncate(60, True) }}...
+                                            {% elif challenge.answers|length <= 1 %}
+                                                {{ challenge.answers[0] }}
+                                            {% else %}
+                                                {% if challenge.answers|length <= 3 %}
+                                                    {{ challenge.answers|join(', ') }}
+                                                {% else %}
+                                                    {{ challenge.answers[:3]|join(', ') }}... ({{ challenge.answers|length - 3 }} more)
+                                                {% endif %}
+                                            {% endif %}
+                                        </span>
+                                    </div>
+                                    
+                                    <!-- Show all match scores for fuzzy matching -->
+                                    {% if interaction.validation.all_matches %}
+                                    <div class="match-details">
+                                        <div class="match-scores">
+                                            {% for match in interaction.validation.all_matches[:3] %}
+                                            <div class="match-score-item">
+                                                <span class="match-text">"{{ match.answer|truncate(30) }}"</span>: <span class="match-value">{{ match.score }}%</span>
+                                            </div>
+                                            {% endfor %}
+                                            {% if interaction.validation.all_matches|length > 3 %}
+                                            <div class="match-more">+ {{ interaction.validation.all_matches|length - 3 }} more</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+        
+        <!-- Loading message row (hidden by default) -->
+        <div id="loading-message-row" class="message-row assistant d-none">
+            <div class="message-content">
+                <div class="message-header">Assistant</div>
+                <div class="loading-message-content">
+                    <div class="typing-dots">
+                        <span class="dot"></span>
+                        <span class="dot"></span>
+                        <span class="dot"></span>
+                    </div>
+                    <span class="loading-text">Generating response...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- API Commands Panel -->
+    <div class="api-commands-panel" id="api-commands-panel">
+        <div class="api-panel-header">
+            <h3>API Commands - {{ challenge.name }}</h3>
+            <button class="close-api-panel" aria-label="Close panel">×</button>
+        </div>
+        
+        <div class="api-tabs">
+            <button class="api-tab active" data-target="curl-block">cURL</button>
+            <button class="api-tab" data-target="powershell-block">PowerShell</button>
+            <button class="api-tab" data-target="python-block">Python</button>
+        </div>
+        
+        <div class="api-content">
+            <!-- cURL examples -->
+            <div class="api-code-block active" id="curl-block">
+                <div class="code-header">
+                    <span class="code-title">cURL Command - Send Prompt</span>
+                    <button class="copy-btn">
+                        <i class="bi bi-clipboard"></i> Copy
+                        <span class="copied-indicator">Copied!</span>
+                    </button>
+                </div>
+                <div class="code-block">
+                    <pre class="code">curl -X POST {{ ui.api_url.rstrip('/') }}/challenge/{{ challenge.name.lower().replace(' ', '_') }} \
+  -H "Content-Type: application/json" \
+  {% if session.get('user_api_key') %}-H "Authorization: Bearer {{ session.get('user_api_key') }}" \{% endif %}
+  {% if session.get('user_token') %}-H "X-User-Token: {{ session.get('user_token') }}" \{% endif %}
+  -d '{"input": "Your prompt here"}'</pre>
+                </div>
+                <p class="mt-2 text-muted small">Use this command in a terminal to send a prompt directly to the API server.</p>
+                
+                <!-- Reset command in same tab but separate block -->
+                <div class="code-header mt-4">
+                    <span class="code-title">cURL Command - Reset Conversation</span>
+                    <button class="copy-btn">
+                        <i class="bi bi-clipboard"></i> Copy
+                        <span class="copied-indicator">Copied!</span>
+                    </button>
+                </div>
+                <div class="code-block">
+                    <pre class="code">curl -X POST {{ ui.api_url.rstrip('/') }}/reset/{{ challenge.name.lower().replace(' ', '_') }} \
+  {% if session.get('user_api_key') %}-H "Authorization: Bearer {{ session.get('user_api_key') }}" \{% endif %}
+  {% if session.get('user_token') %}-H "X-User-Token: {{ session.get('user_token') }}" \{% endif %}
+  -H "Content-Type: application/json"</pre>
+                </div>
+                <p class="mt-2 text-muted small">Use this command to reset the conversation history for this challenge.</p>
+            </div>
+            
+            <!-- PowerShell examples -->
+            <div class="api-code-block" id="powershell-block">
+                <div class="code-header">
+                    <span class="code-title">PowerShell Command - Send Prompt</span>
+                    <button class="copy-btn">
+                        <i class="bi bi-clipboard"></i> Copy
+                        <span class="copied-indicator">Copied!</span>
+                    </button>
+                </div>
+                <div class="code-block">
+                    <pre class="code">{% if not session.get('user_api_key') and not session.get('user_token') %}Invoke-RestMethod -Uri "{{ ui.api_url.rstrip('/') }}/challenge/{{ challenge.name.lower().replace(' ', '_') }}" -Method Post -ContentType "application/json" -Body (ConvertTo-Json @{input = "Your prompt here"}){% elif session.get('user_api_key') and not session.get('user_token') %}Invoke-RestMethod -Uri "{{ ui.api_url.rstrip('/') }}/challenge/{{ challenge.name.lower().replace(' ', '_') }}" -Method Post -ContentType "application/json" -Headers @{"Authorization" = "Bearer {{ session.get('user_api_key') }}"} -Body (ConvertTo-Json @{input = "Your prompt here"}){% elif not session.get('user_api_key') and session.get('user_token') %}Invoke-RestMethod -Uri "{{ ui.api_url.rstrip('/') }}/challenge/{{ challenge.name.lower().replace(' ', '_') }}" -Method Post -ContentType "application/json" -Headers @{"X-User-Token" = "{{ session.get('user_token') }}"} -Body (ConvertTo-Json @{input = "Your prompt here"}){% else %}Invoke-RestMethod -Uri "{{ ui.api_url.rstrip('/') }}/challenge/{{ challenge.name.lower().replace(' ', '_') }}" -Method Post -ContentType "application/json" -Headers @{"Authorization" = "Bearer {{ session.get('user_api_key') }}"; "X-User-Token" = "{{ session.get('user_token') }}"} -Body (ConvertTo-Json @{input = "Your prompt here"}){% endif %}</pre>
+                </div>
+                <p class="mt-2 text-muted small">Use this command in PowerShell to send a prompt directly to the API server.</p>
+                
+                <!-- Reset command in same tab but separate block -->
+                <div class="code-header mt-4">
+                    <span class="code-title">PowerShell Command - Reset Conversation</span>
+                    <button class="copy-btn">
+                        <i class="bi bi-clipboard"></i> Copy
+                        <span class="copied-indicator">Copied!</span>
+                    </button>
+                </div>
+                <div class="code-block">
+                    <pre class="code">{% if not session.get('user_api_key') and not session.get('user_token') %}Invoke-RestMethod -Uri "{{ ui.api_url.rstrip('/') }}/reset/{{ challenge.name.lower().replace(' ', '_') }}" -Method Post -ContentType "application/json"{% elif session.get('user_api_key') and not session.get('user_token') %}Invoke-RestMethod -Uri "{{ ui.api_url.rstrip('/') }}/reset/{{ challenge.name.lower().replace(' ', '_') }}" -Method Post -ContentType "application/json" -Headers @{"Authorization" = "Bearer {{ session.get('user_api_key') }}"}{% elif not session.get('user_api_key') and session.get('user_token') %}Invoke-RestMethod -Uri "{{ ui.api_url.rstrip('/') }}/reset/{{ challenge.name.lower().replace(' ', '_') }}" -Method Post -ContentType "application/json" -Headers @{"X-User-Token" = "{{ session.get('user_token') }}"}{% else %}Invoke-RestMethod -Uri "{{ ui.api_url.rstrip('/') }}/reset/{{ challenge.name.lower().replace(' ', '_') }}" -Method Post -ContentType "application/json" -Headers @{"Authorization" = "Bearer {{ session.get('user_api_key') }}"; "X-User-Token" = "{{ session.get('user_token') }}"}{% endif %}</pre>
+                </div>
+                <p class="mt-2 text-muted small">Use this command in PowerShell to reset the conversation history for this challenge.</p>
+            </div>
+            
+            <!-- Python examples -->
+            <div class="api-code-block" id="python-block">
+                <div class="code-header">
+                    <span class="code-title">Python Code</span>
+                    <button class="copy-btn">
+                        <i class="bi bi-clipboard"></i> Copy
+                        <span class="copied-indicator">Copied!</span>
+                    </button>
+                </div>
+                <div class="code-block">
+                    <pre class="code">import requests
+
+# API endpoint for challenge
+challenge_url = "{{ ui.api_url.rstrip('/') }}/challenge/{{ challenge.name.lower().replace(' ', '_') }}"
+# API endpoint for resetting conversation
+reset_url = "{{ ui.api_url.rstrip('/') }}/reset/{{ challenge.name.lower().replace(' ', '_') }}"
+
+# Set headers
+headers = {"Content-Type": "application/json"}
+{% if session.get('user_api_key') %}headers["Authorization"] = "Bearer {{ session.get('user_api_key') }}"{% endif %}
+{% if session.get('user_token') %}headers["X-User-Token"] = "{{ session.get('user_token') }}"{% endif %}
+
+# Function to send a message
+def send_prompt(message):
+    response = requests.post(
+        challenge_url,
+        json={"input": message},
+        headers=headers,
+        verify=False
+    )
+    result = response.json()
+    print(f"Status: {result.get('status')}")
+    print(f"Output: {result.get('output')}")
+    return result
+
+# Function to reset the conversation
+def reset_conversation():
+    response = requests.post(reset_url, headers=headers, verify=False)
+    result = response.json()
+    print(f"Reset status: {result.get('status')}")
+    return result
+
+# Example: Conversation with multiple prompts
+# First prompt
+response1 = send_prompt("Your first prompt here")
+
+# Subsequent prompts (same conversation is maintained by the API)
+response2 = send_prompt("Your follow-up question here")
+
+# Reset the conversation when finished
+reset_conversation()</pre>
+                </div>
+                <p class="mt-2 text-muted small">Use this Python code to send prompts and maintain a conversation with the API server at {{ ui.api_url }}.</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- API Commands button -->
+    <button class="api-panel-toggle" id="api-panel-toggle" title="Show API Commands">
+        <i class="bi bi-code-slash"></i>
+    </button>
+    
+    <div class="input-area">
+        <!-- Loading progress bar at the top of the input area -->
+        <div class="progress-container" id="progress-container">
+            <div class="progress-bar-animated"></div>
+        </div>
+        <div class="input-container">
+            <form method="POST" id="prompt-form" class="input-form">
+                {{ form.hidden_tag() }}
+                <div class="input-box-wrapper">
+                    {{ form.prompt(class="input-box", placeholder="Send a message", rows="1", autocomplete="off", autofocus=true) }}
+                </div>
+                <button type="submit" class="send-button" id="send-button">
+                    <div class="send-button-content">
+                        <i class="bi bi-send-fill send-button-icon"></i>
+                        <div class="send-button-spinner"></div>
+                    </div>
+                </button>
+            </form>
+            <div class="input-footer">
+                <span class="input-tip">Press Enter to send</span>
+                <form method="POST" action="{{ url_for('reset_challenge', challenge_name=challenge.name.lower().replace(' ', '_')) }}" id="reset-form">
+                    <button type="submit" class="reset-button" id="reset-button">
+                        <i class="bi bi-arrow-repeat"></i> Reset conversation
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+{% else %}
+    <div class="container mt-5">
+        <div class="alert alert-warning">
+            <i class="bi bi-exclamation-triangle me-2"></i> Challenge not found.
+        </div>
+        <a href="{{ url_for('index') }}" class="btn btn-primary">
+            <i class="bi bi-arrow-left"></i> Back to Challenges
+        </a>
+    </div>
+{% endif %}
+
+<script src="{{ url_for('static', filename='js/api-commands.js') }}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('prompt-form');
+        const textarea = document.querySelector('.input-box');
+        const sendButton = document.getElementById('send-button');
+        const resetButton = document.getElementById('reset-button');
+        const loadingMessageRow = document.getElementById('loading-message-row');
+        const progressContainer = document.getElementById('progress-container');
+        
+        // Help button functionality
+        const helpButton = document.getElementById('help-button');
+        const helpContainer = document.getElementById('help-container');
+        
+        if (helpButton && helpContainer) {
+            helpButton.addEventListener('click', function() {
+                helpContainer.classList.toggle('visible');
+                if (helpContainer.classList.contains('visible')) {
+                    helpButton.innerHTML = '<i class="bi bi-x-circle"></i> Hide Hint';
+                } else {
+                    helpButton.innerHTML = '<i class="bi bi-question-circle"></i> Hint';
+                }
+            });
+        }
+        
+        // Auto-resize textarea
+        textarea.addEventListener('input', function() {
+            this.style.height = '24px';
+            this.style.height = Math.min((this.scrollHeight), 200) + 'px';
+        });
+        
+        // Handle Enter key (send) vs Shift+Enter (new line)
+        textarea.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                if (!sendButton.disabled) {
+                    form.submit();
+                }
+            }
+        });
+        
+        // Handle form submission
+        form.addEventListener('submit', function(e) {
+            // Show loading state
+            sendButton.disabled = true;
+            resetButton.disabled = true;
+            sendButton.classList.add('disabled');
+            sendButton.classList.add('loading');
+            textarea.disabled = true;
+            
+            // Activate progress bar - make sure it's visible
+            if (progressContainer) {
+                progressContainer.classList.add('active');
+                console.log('Progress bar activated');
+            } else {
+                console.error('Progress container not found');
+            }
+            
+            // Show loading message
+            if (loadingMessageRow) {
+                loadingMessageRow.classList.remove('d-none');
+                
+                // Force a repaint to ensure animations start properly
+                void loadingMessageRow.offsetWidth;
+                
+                // Scroll to loading indicator
+                setTimeout(() => {
+                    loadingMessageRow.scrollIntoView({behavior: 'smooth', block: 'end'});
+                }, 100);
+            } else {
+                console.error('Loading message row not found');
+            }
+        });
+        
+        // Auto-resize existing textarea
+        if (textarea) {
+            textarea.style.height = '24px';
+            textarea.style.height = Math.min((textarea.scrollHeight), 200) + 'px';
+        }
+        
+        // Scroll to bottom on load
+        window.scrollTo(0, document.body.scrollHeight);
+    });
+</script>
+{% endblock %}

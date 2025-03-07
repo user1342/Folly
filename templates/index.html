@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+
+{% block title %}Folly - LLM Prompt Injection Testing Tool{% endblock %}
+
+{% block content %}
+<div class="chat-container mt-5 mb-5">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-10 col-lg-8">
+            <div class="text-center mb-5">
+                <h1 class="display-4 mb-4">Folly - LLM Prompt Injection Testing</h1>
+                <p class="lead">
+                    Test your prompt engineering skills against these challenges.
+                    Each challenge tests your ability to work with or circumvent different LLM safeguards.
+                </p>
+                
+                <!-- Progress overview -->
+                {% if challenges %}
+                    {% set completed_count = completed_challenges|length %}
+                    {% set total_count = challenges|length %}
+                    {% set percent_complete = (completed_count / total_count * 100)|int if total_count > 0 else 0 %}
+                    
+                    <div class="progress-overview mb-4">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Your progress: <strong>{{ completed_count }} / {{ total_count }} completed</strong></span>
+                            <span>{{ percent_complete }}%</span>
+                        </div>
+                        <div class="progress">
+                            <div class="progress-bar bg-success" role="progressbar" 
+                                 style="width: {{ percent_complete }}%" 
+                                 aria-valuenow="{{ percent_complete }}" 
+                                 aria-valuemin="0" 
+                                 aria-valuemax="100"></div>
+                        </div>
+                        
+                        {% if completed_count > 0 %}
+                        <form method="POST" action="{{ url_for('reset_all_progress') }}" class="mt-3">
+                            <button type="submit" class="btn btn-sm btn-outline-danger" 
+                                    onclick="return confirm('Are you sure you want to reset all your progress?')">
+                                <i class="bi bi-trash"></i> Reset all progress
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+            
+            <h3 class="mb-4 text-center">Available Challenges</h3>
+            
+            {% if challenges %}
+                <div class="row row-cols-1 row-cols-md-2 g-4">
+                    {% for challenge in challenges %}
+                        {% set is_completed = challenge.name.lower().replace(' ', '_') in completed_challenges %}
+                        <div class="col">
+                            <div class="card h-100 shadow-sm hover-lift {% if is_completed %}challenge-completed{% endif %}">
+                                {% if is_completed %}
+                                <div class="challenge-completion-badge">
+                                    <i class="bi bi-check"></i>
+                                </div>
+                                {% endif %}
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <h5 class="card-title mb-0">{{ challenge.name }}</h5>
+                                        {% if is_completed %}
+                                        <span class="badge bg-success rounded-pill">
+                                            <i class="bi bi-check-circle-fill"></i> Completed
+                                        </span>
+                                        {% endif %}
+                                    </div>
+                                    <p class="card-text">{{ challenge.description }}</p>
+                                    <a href="{{ url_for('show_challenge', challenge_name=challenge.name.lower().replace(' ', '_')) }}" class="btn btn-outline-primary w-100">
+                                        {% if is_completed %}
+                                            <i class="bi bi-arrow-repeat"></i> Try Again
+                                        {% else %}
+                                            <i class="bi bi-play-fill"></i> Start Challenge
+                                        {% endif %}
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle me-2"></i> No challenges available. Make sure the API server is running.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Folly - LLM Prompt Injection Testing Tool{% endblock %}</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/clean.css') }}">
+    
+    <!-- Preload key resources -->
+    <link rel="preload" href="{{ url_for('static', filename='css/clean.css') }}" as="style">
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" as="style">
+</head>
+<body class="{% if request.cookies.get('darkMode') == 'true' %}dark-mode{% endif %}">
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h5>LLM Challenge Tool</h5>
+        </div>
+        <a href="{{ url_for('index') }}" class="new-challenge-btn">
+            <i class="bi bi-plus-lg"></i> All Challenges
+        </a>
+        <ul class="challenge-list">
+            {% for challenge in challenges %}
+                {% set is_completed = challenge.name.lower().replace(' ', '_') in completed_challenges %}
+                <li class="challenge-item {% if request.path == url_for('show_challenge', challenge_name=challenge.name.lower().replace(' ', '_')) %}active{% endif %} {% if is_completed %}challenge-completed{% endif %}">
+                    <a href="{{ url_for('show_challenge', challenge_name=challenge.name.lower().replace(' ', '_')) }}">
+                        <i class="bi bi-chat-square-text"></i>
+                        <span class="challenge-text">{{ challenge.name }}</span>
+                        {% if is_completed %}
+                        <span class="sidebar-completion-badge"><i class="bi bi-check-circle-fill"></i></span>
+                        {% endif %}
+                    </a>
+                </li>
+            {% endfor %}
+        </ul>
+        
+        <!-- Modified sidebar footer to only include dark mode toggle -->
+        <div class="sidebar-footer">
+            <div class="dark-mode-toggle" onclick="toggleDarkMode()">
+                <span>Dark mode</span>
+                <i class="bi bi-moon-fill"></i>
+            </div>
+        </div>
+    </div>
+    
+    <div class="main-content">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for category, message in messages %}
+                        <div class="flash-message {{ category }}">
+                            {{ message }}
+                            <button type="button" class="close-btn" onclick="this.parentElement.remove()">×</button>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </div>
+    
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Custom API Settings</h3>
+                <button class="close-modal" onclick="closeSettingsModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <form action="{{ url_for('update_settings') }}" method="post">
+                    <div class="form-group">
+                        <label for="user_api_url">Custom API URL (optional):</label>
+                        <input type="text" id="user_api_url" name="user_api_url" class="form-control" 
+                               placeholder="e.g., https://api.openai.com/v1" value="{{ session.get('user_api_url', '') }}">
+                        <small class="form-text text-muted">Enter a custom API endpoint to use your own LLM server.</small>
+                    </div>
+                    <div class="form-group mt-3">
+                        <label for="user_api_key">Custom API Key (optional):</label>
+                        <input type="password" id="user_api_key" name="user_api_key" class="form-control"
+                               placeholder="Your API key" value="{{ session.get('user_api_key', '') }}">
+                        <small class="form-text text-muted">Enter your API key for the custom endpoint.</small>
+                    </div>
+                    <div class="form-text mb-3" style="font-size: 0.875rem;">
+                        <i class="bi bi-info-circle"></i> These settings are stored in your browser session only.
+                    </div>
+                    <div class="d-flex justify-content-between mt-4">
+                        <button type="submit" class="btn btn-primary">Save Settings</button>
+                        <a href="#" onclick="submitClearSettings(); return false;" class="btn btn-outline-secondary">Reset to Default</a>
+                    </div>
+                </form>
+                <form id="clear-settings-form" action="{{ url_for('clear_settings') }}" method="post" style="display: none;"></form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+            const isDarkMode = document.body.classList.contains('dark-mode');
+            
+            // Store preference in cookie that expires in 365 days
+            let date = new Date();
+            date.setTime(date.getTime() + (365*24*60*60*1000));
+            document.cookie = `darkMode=${isDarkMode}; expires=${date.toUTCString()}; path=/`;
+        }
+        
+        // Auto-hide flash messages after 5 seconds
+        document.addEventListener('DOMContentLoaded', function() {
+            const flashMessages = document.querySelectorAll('.flash-message');
+            flashMessages.forEach(message => {
+                setTimeout(() => {
+                    message.style.opacity = '0';
+                    message.style.transition = 'opacity 0.5s ease';
+                    setTimeout(() => message.remove(), 500);
+                }, 5000);
+            });
+        });
+        
+        // Settings modal functions
+        function openSettingsModal() {
+            document.getElementById('settings-modal').classList.add('active');
+        }
+        
+        function closeSettingsModal() {
+            document.getElementById('settings-modal').classList.remove('active');
+        }
+        
+        function submitClearSettings() {
+            if (confirm('This will reset your API settings to the default. Continue?')) {
+                document.getElementById('clear-settings-form').submit();
+            }
+        }
+        
+        // Close modal when clicking outside
+        window.addEventListener('click', function(event) {
+            const modal = document.getElementById('settings-modal');
+            if (event.target === modal) {
+                closeSettingsModal();
+            }
+        });
+    </script>
+</body>
+</html>
