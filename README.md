@@ -1,12 +1,10 @@
-| 🏰 Folly - LLM Prompt Injection Testing - A Flask-based tool for testing prompt injection and jailbreaking attacks against different LLM APIs.
-| --- |
-
+# 🏰 Folly
 
 <div align="center">
-  <img src="Folly.png" alt="Folly UI Overview" width="70%">
-  <p><em>The Folly challenge interface</em></p>
+  <img src="screenshots/folly_banner.gif" alt="Folly Tool Banner" width="80%">
 </div>
 
+A Flask-based tool for testing prompt injection and jailbreaking attacks against different LLM APIs.
 
 ## ✨ Overview
 
@@ -16,37 +14,49 @@ This tool provides:
 - ⚙️ Configuration-based challenge definitions
 - 🛡️ Support for various prompt injection and jailbreaking techniques
 
+<div align="center">
+  <img src="screenshots/ui_overview.png" alt="Folly UI Overview" width="70%">
+  <p><em>The Folly challenge interface showing the available challenges</em></p>
+</div>
+
 ## 📦 Installation
 
+### From Source
+
 ```bash
-# Install API server dependencies
-pip install -r requirements.txt
+# Clone the repository
+git clone https://github.com/yourusername/folly.git
+cd folly
+
+# Install the package in development mode
+pip install -e .
+```
+
+### Using pip
+
+```bash
+pip git+https://github.com/user1342/folly
 ```
 
 ## 🏃‍♂️ Running the Tool
 
-### Step 1: Start the API server 🚀
+### Using Command-Line Tools
+
+After installation, you can use the provided command-line tools:
 
 ```bash
-# For OpenAI API
-python api.py https://api.openai.com/v1 --api-key <your_openai_api_key> --model gpt-4 <path to config json>
+# Start the API server (OpenAI example)
+folly-api https://api.openai.com/v1 --api-key your_openai_api_key --model gpt-4 <config>.json --port 4000 --log out.json
 
-# For Ollama (locally running)
-python api.py http://localhost:11434/v1 --model llama3.1 <path to config json>
+# Start the API server (Ollama example)
+folly-api http://localhost:11434/v1 --model llama3.2 <config>.json --port 4000 --log out.json
 
-# For any other API endpoint
-python api.py https://your-api-endpoint/v1 --api-key your_api_key --model your_model_name <path to config json>
+# Start the UI server (automatically opens in browser)
+folly-ui http://localhost:4000 --port 5001
+
+# Start UI server without automatically opening browser
+folly-ui http://localhost:4000 --port 5001 --no-browser
 ```
-
-### Step 2: Start the UI server 🎮
-
-```bash
-python ui_app.py http://localhost:5000 --port 5001
-```
-
-### Step 3: Access the UI 🌐
-
-Open your web browser and navigate to: http://localhost:5001
 
 ## 🔌 Connecting to LLM Providers
 
@@ -55,7 +65,7 @@ Open your web browser and navigate to: http://localhost:5001
 1. Get your API key from the [OpenAI Platform](https://platform.openai.com/account/api-keys)
 2. Start the API server with:
    ```bash
-   python api.py https://api.openai.com/v1 --api-key <key-here> --model gpt-4 <config json path>
+   folly-api https://api.openai.com/v1 --api-key sk-your-key-here --model gpt-4 prompt_injection_masterclass.json
    ```
 3. Available models include: `gpt-3.5-turbo`, `gpt-4`, `gpt-4-turbo`
 
@@ -64,17 +74,13 @@ Open your web browser and navigate to: http://localhost:5001
 1. [Install Ollama](https://ollama.ai/download)
 2. Pull your desired model:
    ```bash
-   ollama run llama3.1
+   ollama pull llama3.2
    ```
 3. Start the API server with:
    ```bash
-   python api.py http://localhost:11434/v1 --model llama3.1 <config json path>
+   folly-api http://localhost:11434/v1 --model llama3.2 prompt_injection_masterclass.json
    ```
-
-<div align="center">
-  <img src="folly-gif.gif" alt="System Prompt Extraction Challenge" width="75%">
-  <p><em>Example of using Folly</em></p>
-</div>
+4. Available models depend on what you've pulled with Ollama
 
 ## 🛠️ Creating Custom Challenges
 
@@ -109,15 +115,6 @@ Create a JSON file with challenges using the following structure:
 | `answers` | Keywords to check for in responses or exact answers |
 | `fuzzy_match_score` | Percentage threshold for fuzzy matching (set to `null` for keyword mode) |
 | `help` | Hint text for the challenge |
-
-## 🎮 Using the Web UI
-
-1. Navigate to challenges from the homepage
-2. Click on a challenge to access it
-3. Read the challenge description and initial prompt
-4. Enter your prompt in the textbox and submit
-5. View the LLM's response and validation results
-6. Reset a challenge to try again
 
 ## 🔍 API Usage Examples
 
