@@ -30,7 +30,7 @@ pip install -e .
 ### Using pip
 
 ```bash
-pip git+https://github.com/user1342/folly
+pip install git+https://github.com/user1342/folly
 ```
 
 ## 🏃‍♂️ Running the Tool
