@@ -605,25 +605,54 @@ reset_conversation()</pre>
             const url = form.action || window.location.href;
             const data = new FormData();
             data.append('prompt', promptText);
-            data.append('csrf_token', form.querySelector('input[name="csrf_token"]').value);
             
+            // Make sure to include the CSRF token if it exists
+            const csrfToken = form.querySelector('input[name="csrf_token"]');
+            if (csrfToken) {
+                data.append('csrf_token', csrfToken.value);
+            }
+            
+            // Special handling for iframe in notebook context
             if (isInIframe) {
-                // Special handling for iframe contexts
-                console.log("Sending request in iframe context");
+                console.log("Sending request in iframe/notebook context");
                 const xhr = new XMLHttpRequest();
                 xhr.open('POST', url, true);
                 xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
                 
                 xhr.onreadystatechange = function() {
                     if (xhr.readyState === 4) {
-                        if (xhr.status === 200) {
-                            try {
-                                console.log("Request succeeded");
-                                window.location.reload();
-                            } catch (e) {
-                                console.error("Error parsing response:", e);
-                                window.location.reload();
+                        console.log("Response received, status:", xhr.status);
+                        
+                        if (xhr.status >= 200 && xhr.status < 300) {
+                            // Notebook iframe - never reload, instead add placeholder
+                            const messageRow = document.createElement('div');
+                            messageRow.className = 'message-row assistant';
+                            messageRow.innerHTML = `
+                                <div class="message-content">
+                                    <div class="message-header">Assistant</div>
+                                    <div class="message-bubble">
+                                        <div class="assistant-message">
+                                            Response received. 
+                                            <button onclick="window.location.reload()" class="btn btn-sm btn-outline-primary">
+                                                Click to refresh and view
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                            
+                            // Hide loading message and add our placeholder
+                            if (loadingMessageRow) {
+                                loadingMessageRow.classList.add('d-none');
+                                chatContainer.appendChild(messageRow);
                             }
+                            
+                            // Reset form UI
+                            resetFormUI();
+                            
+                            // Scroll to new message
+                            if (chatContainer) chatContainer.scrollTop = chatContainer.scrollHeight;
+                            window.scrollTo(0, document.body.scrollHeight);
                         } else {
                             console.error("Request failed, status:", xhr.status);
                             resetFormUI();
@@ -638,7 +667,9 @@ reset_conversation()</pre>
                     alert("Network error. Please check your connection and try again.");
                 };
                 
+                // Send the request
                 xhr.send(data);
+                
             } else {
                 // Standard approach for non-iframe contexts
                 fetch(url, {
@@ -724,7 +755,9 @@ reset_conversation()</pre>
                         xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
                         xhr.onreadystatechange = function() {
                             if (xhr.readyState === 4) {
-                                window.location.reload();
+                                // Show success message instead of reloading
+                                alert('Conversation has been reset. Refresh to see changes.');
+                                resetFormUI();
                             }
                         };
                         xhr.send(new FormData(resetForm));
