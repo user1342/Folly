@@ -624,39 +624,17 @@ reset_conversation()</pre>
                         console.log("Response received, status:", xhr.status);
                         
                         if (xhr.status >= 200 && xhr.status < 300) {
-                            // Notebook iframe - never reload, instead add placeholder
-                            const messageRow = document.createElement('div');
-                            messageRow.className = 'message-row assistant';
-                            messageRow.innerHTML = `
-                                <div class="message-content">
-                                    <div class="message-header">Assistant</div>
-                                    <div class="message-bubble">
-                                        <div class="assistant-message">
-                                            Response received. 
-                                            <button onclick="window.location.reload()" class="btn btn-sm btn-outline-primary">
-                                                Click to refresh and view
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            `;
-                            
-                            // Hide loading message and add our placeholder
-                            if (loadingMessageRow) {
-                                loadingMessageRow.classList.add('d-none');
-                                chatContainer.appendChild(messageRow);
+                            try {
+                                // Process the response and update the UI
+                                processNotebookResponse(xhr.responseText, promptText);
+                            } catch (e) {
+                                console.error("Error processing response:", e);
+                                addErrorMessage("Error processing the response. Please try refreshing the page.");
                             }
-                            
-                            // Reset form UI
-                            resetFormUI();
-                            
-                            // Scroll to new message
-                            if (chatContainer) chatContainer.scrollTop = chatContainer.scrollHeight;
-                            window.scrollTo(0, document.body.scrollHeight);
                         } else {
                             console.error("Request failed, status:", xhr.status);
                             resetFormUI();
-                            alert(`Error: Server returned status ${xhr.status}. Please try again.`);
+                            addErrorMessage(`Error: Server returned status ${xhr.status}. Please try again.`);
                         }
                     }
                 };
@@ -664,14 +642,13 @@ reset_conversation()</pre>
                 xhr.onerror = function() {
                     console.error("Network error occurred");
                     resetFormUI();
-                    alert("Network error. Please check your connection and try again.");
+                    addErrorMessage("Network error. Please check your connection and try again.");
                 };
                 
                 // Send the request
                 xhr.send(data);
-                
             } else {
-                // Standard approach for non-iframe contexts
+                // Standard approach for non-iframe contexts - unchanged
                 fetch(url, {
                     method: 'POST',
                     headers: {
@@ -691,6 +668,90 @@ reset_conversation()</pre>
                     alert('Error submitting your message. Please try again.');
                 });
             }
+        }
+        
+        // Process response for notebook iframe context
+        function processNotebookResponse(responseText, userPrompt) {
+            try {
+                // Try to parse as JSON first
+                const jsonResponse = JSON.parse(responseText);
+                
+                if (jsonResponse.status === 'success') {
+                    // Hide loading message
+                    if (loadingMessageRow) {
+                        loadingMessageRow.classList.add('d-none');
+                    }
+                    
+                    // Add assistant response
+                    const assistantMessage = document.createElement('div');
+                    assistantMessage.className = 'message-row assistant';
+                    
+                    let messageHTML = `
+                        <div class="message-content">
+                            <div class="message-header">Assistant</div>
+                            <div class="message-bubble">
+                                <div class="assistant-message">Response processed in notebook environment.</div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    assistantMessage.innerHTML = messageHTML;
+                    chatContainer.appendChild(assistantMessage);
+                    
+                    // Add notification to update
+                    const notificationRow = document.createElement('div');
+                    notificationRow.className = 'message-row system-message';
+                    notificationRow.innerHTML = `
+                        <div class="system-notification">
+                            <i class="bi bi-info-circle"></i>
+                            Response received but session state updated. Refresh to see full message history.
+                            <button onclick="window.location.reload()" class="btn btn-sm btn-outline-primary ml-2">
+                                Refresh Now
+                            </button>
+                        </div>
+                    `;
+                    chatContainer.appendChild(notificationRow);
+                } else {
+                    // Show error message
+                    addErrorMessage("Error: " + (jsonResponse.reason || "Unknown error occurred"));
+                }
+                
+                // Reset form controls
+                resetFormUI();
+                
+                // Scroll to see new content
+                if (chatContainer) chatContainer.scrollTop = chatContainer.scrollHeight;
+                window.scrollTo(0, document.body.scrollHeight);
+                
+            } catch (e) {
+                console.error("Error parsing response:", e);
+                resetFormUI();
+                addErrorMessage("Failed to parse server response. Please try refreshing the page.");
+            }
+        }
+        
+        // Add error message to chat
+        function addErrorMessage(errorText) {
+            const errorRow = document.createElement('div');
+            errorRow.className = 'message-row system-message';
+            errorRow.innerHTML = `
+                <div class="system-error">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    ${errorText}
+                </div>
+            `;
+            
+            // Hide loading message if it's showing
+            if (loadingMessageRow) {
+                loadingMessageRow.classList.add('d-none');
+            }
+            
+            // Add error to chat
+            chatContainer.appendChild(errorRow);
+            
+            // Scroll to error
+            if (chatContainer) chatContainer.scrollTop = chatContainer.scrollHeight;
+            window.scrollTo(0, document.body.scrollHeight);
         }
         
         // Add user message to the UI immediately
@@ -755,9 +816,34 @@ reset_conversation()</pre>
                         xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
                         xhr.onreadystatechange = function() {
                             if (xhr.readyState === 4) {
-                                // Show success message instead of reloading
-                                alert('Conversation has been reset. Refresh to see changes.');
-                                resetFormUI();
+                                if (xhr.status >= 200 && xhr.status < 300) {
+                                    // Add system notification about the reset
+                                    const notificationRow = document.createElement('div');
+                                    notificationRow.className = 'message-row system-message';
+                                    notificationRow.innerHTML = `
+                                        <div class="system-notification">
+                                            <i class="bi bi-arrow-repeat"></i>
+                                            Conversation has been reset. 
+                                            <button onclick="window.location.reload()" class="btn btn-sm btn-primary ml-2">
+                                                Refresh to start new conversation
+                                            </button>
+                                        </div>
+                                    `;
+                                    chatContainer.appendChild(notificationRow);
+                                    resetFormUI();
+                                    
+                                    // Optional: Clear out existing messages for cleaner UI
+                                    const existingMessages = chatContainer.querySelectorAll('.message-row.user, .message-row.assistant:not(:first-child)');
+                                    existingMessages.forEach(msg => {
+                                        msg.style.opacity = '0.5'; // Fade out existing messages
+                                    });
+                                    
+                                    // Scroll to notification
+                                    if (chatContainer) chatContainer.scrollTop = chatContainer.scrollHeight;
+                                } else {
+                                    resetFormUI();
+                                    addErrorMessage("Error resetting conversation. Please try refreshing the page.");
+                                }
                             }
                         };
                         xhr.send(new FormData(resetForm));
@@ -787,6 +873,46 @@ reset_conversation()</pre>
         
         // Scroll to bottom on load
         window.scrollTo(0, document.body.scrollHeight);
+        
+        // Add styles for system messages
+        const styleElement = document.createElement('style');
+        styleElement.textContent = `
+            .system-message {
+                padding: 10px 20px;
+                margin: 10px 0;
+            }
+            .system-notification, .system-error {
+                padding: 10px 15px;
+                border-radius: 8px;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+            .system-notification {
+                background-color: #e7f3ff;
+                border: 1px solid #bedcff;
+                color: #0055b3;
+            }
+            .system-error {
+                background-color: #ffe7e7;
+                border: 1px solid #ffbebe;
+                color: #b30000;
+            }
+            .ml-2 {
+                margin-left: 8px;
+            }
+            .dark-mode .system-notification {
+                background-color: #1a3954;
+                border-color: #245685;
+                color: #bedcff;
+            }
+            .dark-mode .system-error {
+                background-color: #541a1a;
+                border-color: #852424;
+                color: #ffbebe;
+            }
+        `;
+        document.head.appendChild(styleElement);
     });
 </script>
 {% endblock %}
