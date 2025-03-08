@@ -119,7 +119,7 @@ Challenges are defined in a JSON file with the following structure:
 | `deny_inputs` | Blocked user inputs for safety | ✓ |
 | `deny_outputs` | Blocked LLM outputs for safety | ✓ |
 | `description` | User-facing challenge description | |
-| `answers` | Keywords or text to validate success | |
+| `answers` | Keywords or text to validate success | Recommended |
 | `fuzzy_match_score` | Matching threshold percentage | |
 | `help` | Hint text for the challenge | |
 
