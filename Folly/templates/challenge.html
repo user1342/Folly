@@ -454,7 +454,6 @@ reset_conversation()</pre>
     </div>
 {% endif %}
 
-<script src="{{ url_for('static', filename='js/api-commands.js') }}"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const form = document.getElementById('prompt-form');
@@ -463,6 +462,74 @@ reset_conversation()</pre>
         const resetButton = document.getElementById('reset-button');
         const loadingMessageRow = document.getElementById('loading-message-row');
         const progressContainer = document.getElementById('progress-container');
+        const chatContainer = document.querySelector('.chat-container');
+        
+        // API Commands Panel functionality
+        const apiPanelToggle = document.getElementById('api-panel-toggle');
+        const apiCommandsPanel = document.getElementById('api-commands-panel');
+        const closeApiPanel = document.querySelector('.close-api-panel');
+        const apiTabs = document.querySelectorAll('.api-tab');
+        const copyButtons = document.querySelectorAll('.copy-btn');
+        
+        // Toggle API Commands Panel
+        if (apiPanelToggle && apiCommandsPanel) {
+            apiPanelToggle.addEventListener('click', function() {
+                apiCommandsPanel.classList.toggle('active');
+            });
+        }
+        
+        // Close API Commands Panel
+        if (closeApiPanel && apiCommandsPanel) {
+            closeApiPanel.addEventListener('click', function() {
+                apiCommandsPanel.classList.remove('active');
+            });
+        }
+        
+        // API Tabs Functionality
+        if (apiTabs.length) {
+            apiTabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    // Remove active class from all tabs and blocks
+                    document.querySelectorAll('.api-tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.api-code-block').forEach(b => b.classList.remove('active'));
+                    
+                    // Add active class to the clicked tab
+                    this.classList.add('active');
+                    
+                    // Show the corresponding code block
+                    const targetId = this.getAttribute('data-target');
+                    const targetBlock = document.getElementById(targetId);
+                    if (targetBlock) {
+                        targetBlock.classList.add('active');
+                    }
+                });
+            });
+        }
+        
+        // Copy Functionality
+        if (copyButtons.length) {
+            copyButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    // Find the pre element within the parent code block
+                    const codeBlock = this.closest('.code-header').nextElementSibling;
+                    const codeText = codeBlock.querySelector('pre.code').textContent;
+                    
+                    // Copy to clipboard
+                    navigator.clipboard.writeText(codeText).then(() => {
+                        // Show copied indicator
+                        const indicator = this.querySelector('.copied-indicator');
+                        if (indicator) {
+                            indicator.style.display = 'inline-block';
+                            setTimeout(() => {
+                                indicator.style.display = 'none';
+                            }, 2000);
+                        }
+                    }).catch(err => {
+                        console.error('Failed to copy:', err);
+                    });
+                });
+            });
+        }
         
         // Help button functionality
         const helpButton = document.getElementById('help-button');
@@ -490,43 +557,136 @@ reset_conversation()</pre>
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
                 if (!sendButton.disabled) {
-                    form.submit();
+                    sendMessage();
                 }
             }
         });
         
-        // Handle form submission
-        form.addEventListener('submit', function(e) {
-            // Show loading state
+        // Handle form submission - always use AJAX
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                sendMessage();
+            });
+        }
+        
+        // Unified message sending function with AJAX handling
+        function sendMessage() {
+            // Save the prompt text and clear it from the form
+            const promptText = textarea.value.trim();
+            if (!promptText) return;
+            
+            // Add user message to chat UI immediately
+            addUserMessage(promptText);
+            
+            // Clear the textarea and reset height
+            textarea.value = '';
+            textarea.style.height = '24px';
+            
+            // Show loading states
             sendButton.disabled = true;
-            resetButton.disabled = true;
-            sendButton.classList.add('disabled');
-            sendButton.classList.add('loading');
+            if (resetButton) resetButton.disabled = true;
             textarea.disabled = true;
             
-            // Activate progress bar - make sure it's visible
-            if (progressContainer) {
-                progressContainer.classList.add('active');
-                console.log('Progress bar activated');
+            if (progressContainer) progressContainer.classList.add('active');
+            if (loadingMessageRow) loadingMessageRow.classList.remove('d-none');
+            
+            // Scroll to the loading indicator
+            setTimeout(() => {
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+                window.scrollTo(0, document.body.scrollHeight);
+            }, 100);
+            
+            // Prepare form data
+            const formData = new FormData(form);
+            
+            // Make sure the prompt field has the prompt text (it may have been cleared above)
+            formData.set('prompt', promptText);
+            
+            const url = form.action || window.location.href;
+            
+            // Send the AJAX request
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                // Use a page reload - simpler and more reliable
+                window.location.reload();
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                resetFormUI();
+                alert('Error submitting your message. Please try again.');
+            });
+        }
+        
+        // Add user message to the UI immediately
+        function addUserMessage(text) {
+            const messageRow = document.createElement('div');
+            messageRow.className = 'message-row user';
+            messageRow.innerHTML = `
+                <div class="message-content">
+                    <div class="message-header">You</div>
+                    <div class="message-bubble">
+                        <div class="user-message">${escapeHtml(text)}</div>
+                    </div>
+                </div>
+            `;
+            
+            // Insert before loading message
+            if (loadingMessageRow) {
+                chatContainer.insertBefore(messageRow, loadingMessageRow);
             } else {
-                console.error('Progress container not found');
+                chatContainer.appendChild(messageRow);
             }
             
-            // Show loading message
-            if (loadingMessageRow) {
-                loadingMessageRow.classList.remove('d-none');
-                
-                // Force a repaint to ensure animations start properly
-                void loadingMessageRow.offsetWidth;
-                
-                // Scroll to loading indicator
-                setTimeout(() => {
-                    loadingMessageRow.scrollIntoView({behavior: 'smooth', block: 'end'});
-                }, 100);
-            } else {
-                console.error('Loading message row not found');
-            }
-        });
+            // Scroll to new message
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+            window.scrollTo(0, document.body.scrollHeight);
+        }
+        
+        // Helper function to escape HTML - fixed syntax errors
+        function escapeHtml(unsafe) {
+            return unsafe
+                 .replace(/&/g, "&amp;")
+                 .replace(/</g, "&lt;")
+                 .replace(/>/g, "&gt;")
+                 .replace(/"/g, "&quot;")
+                 .replace(/'/g, "&#039;");
+        }
+        
+        // Reset form UI elements
+        function resetFormUI() {
+            sendButton.disabled = false;
+            if (resetButton) resetButton.disabled = false;
+            textarea.disabled = false;
+            
+            if (progressContainer) progressContainer.classList.remove('active');
+            if (loadingMessageRow) loadingMessageRow.classList.add('d-none');
+        }
+        
+        // Reset form handler
+        const resetForm = document.getElementById('reset-form');
+        if (resetForm) {
+            resetForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                if (confirm('Are you sure you want to reset this conversation?')) {
+                    // Show loading state
+                    if (resetButton) resetButton.disabled = true;
+                    if (sendButton) sendButton.disabled = true;
+                    
+                    // Submit the reset form (will reload the page)
+                    this.submit();
+                }
+            });
+        }
         
         // Auto-resize existing textarea
         if (textarea) {

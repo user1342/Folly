@@ -14,7 +14,7 @@ import webbrowser
 from typing import Dict, List, Optional, Any, Union
 import uuid
 
-from flask import Flask, render_template, redirect, url_for, flash, session as flask_session, request
+from flask import Flask, render_template, redirect, url_for, flash, session as flask_session, request, jsonify
 from flask_session import Session
 from flask_wtf import FlaskForm
 from wtforms import TextAreaField, SubmitField
@@ -336,45 +336,57 @@ def create_app(ui: ChallengeUI) -> Flask:
         if form.validate_on_submit():
             prompt_text = form.prompt.data
             
-            # Submit the prompt - pass session to use user's API settings
-            result = ui.submit_prompt(challenge_name, prompt_text, flask_session)
-            
-            # Add to history
-            if result.get('status') == 'success':
-                # Validate the answer by calling the API endpoint - not locally
-                validation = ui.validate_response(challenge_name, result.get('output', ''), flask_session)
-                result['validation'] = validation
+            try:
+                # Submit the prompt - pass session to use user's API settings
+                result = ui.submit_prompt(challenge_name, prompt_text, flask_session)
                 
-                flask_session[history_key].append(result)
-                flask_session.modified = True
-                
-                if validation.get('valid'):
-                    flash('Challenge passed! 🎉', 'success')
+                # Add to history
+                if result.get('status') == 'success':
+                    # Validate the answer by calling the API endpoint - not locally
+                    validation = ui.validate_response(challenge_name, result.get('output', ''), flask_session)
+                    result['validation'] = validation
                     
-                    # Mark this challenge as completed
-                    if 'completed_challenges' not in flask_session:
-                        flask_session['completed_challenges'] = []
+                    flask_session[history_key].append(result)
+                    flask_session.modified = True
                     
-                    # Store challenge_name in lowercase with underscores for consistent matching
-                    challenge_name_normalized = challenge_name.lower().replace(' ', '_')
-                    
-                    # Add to completed challenges if not already there
-                    if challenge_name_normalized not in flask_session['completed_challenges']:
-                        flask_session['completed_challenges'].append(challenge_name_normalized)
-                        flask_session.modified = True
-                else:
-                    # More descriptive failure message
-                    if 'match_percent' in validation:
-                        match_threshold = validation.get('fuzzy_threshold', 0)
-                        flash(f"Challenge attempt failed. Match: {validation['match_percent']}%, Threshold: {match_threshold}%", 'warning')
+                    if validation.get('valid'):
+                        flash('Challenge passed! 🎉', 'success')
+                        
+                        # Mark this challenge as completed
+                        if 'completed_challenges' not in flask_session:
+                            flask_session['completed_challenges'] = []
+                        
+                        # Store challenge_name in lowercase with underscores for consistent matching
+                        challenge_name_normalized = challenge_name.lower().replace(' ', '_')
+                        
+                        # Add to completed challenges if not already there
+                        if challenge_name_normalized not in flask_session['completed_challenges']:
+                            flask_session['completed_challenges'].append(challenge_name_normalized)
+                            flask_session.modified = True
                     else:
-                        flash('Challenge attempt failed. Try a different approach.', 'warning')
+                        # More descriptive failure message
+                        if 'match_percent' in validation:
+                            match_threshold = validation.get('fuzzy_threshold', 0)
+                            flash(f"Challenge attempt failed. Match: {validation['match_percent']}%, Threshold: {match_threshold}%", 'warning')
+                        else:
+                            flash('Challenge attempt failed. Try a different approach.', 'warning')
+                else:
+                    flask_session[history_key].append(result)
+                    flask_session.modified = True
+                    flash(f"Error: {result.get('reason', 'Unknown error')}", 'danger')
+            except Exception as e:
+                flash(f"Error processing your request: {str(e)}", 'danger')
+                print(f"Exception in show_challenge: {e}")
+            
+            # Either redirect (standard form) or return JSON (AJAX)
+            is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+            if is_ajax:
+                return jsonify({
+                    'status': 'success',
+                    'reload': True
+                })
             else:
-                flask_session[history_key].append(result)
-                flask_session.modified = True
-                flash(f"Error: {result.get('reason', 'Unknown error')}", 'danger')
-                
-            return redirect(url_for('show_challenge', challenge_name=challenge_name))
+                return redirect(url_for('show_challenge', challenge_name=challenge_name))
         
         # Add JavaScript for handling loading state
         loading_js = """
@@ -392,18 +404,6 @@ def create_app(ui: ChallengeUI) -> Flask:
                 <span class="spinner"></span>
               `;
               sendButton.innerHTML = buttonContent;
-              
-              form.addEventListener('submit', function() {
-                // Show loading state
-                sendButton.classList.add('loading');
-                sendButton.disabled = true;
-                
-                // Disable textarea
-                const textarea = form.querySelector('textarea');
-                if (textarea) {
-                  textarea.readOnly = true;
-                }
-              });
             }
           });
         </script>
@@ -427,7 +427,7 @@ def create_app(ui: ChallengeUI) -> Flask:
             challenge_name: Name of the challenge to reset
             
         Returns:
-            Redirect to the challenge page
+            Redirect to the challenge page or JSON response for AJAX requests
         """
         challenge = ui.get_challenge_by_name(challenge_name)
         if not challenge:
@@ -450,7 +450,22 @@ def create_app(ui: ChallengeUI) -> Flask:
         flask_session.modified = True
         
         flash('Challenge conversation reset', 'info')
-        return redirect(url_for('show_challenge', challenge_name=challenge_name))
+        
+        # Check if this is an AJAX request
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            form = PromptForm()
+            # For AJAX, render the template and return as JSON
+            html_content = render_template(
+                'challenge.html',
+                challenge=challenge,
+                form=form,
+                history=flask_session.get(history_key, []),
+                ui=ui
+            )
+            return jsonify({'html': html_content})
+        else:
+            # For standard request, redirect as usual
+            return redirect(url_for('show_challenge', challenge_name=challenge_name))
     
     # Add a new route to reset all progress
     @app.route('/reset-all', methods=['POST'])
@@ -493,6 +508,21 @@ def create_app(ui: ChallengeUI) -> Flask:
         if referer:
             return redirect(referer)
         return redirect(url_for('index'))
+    
+    # Add debug route to help diagnose AJAX issues
+    @app.route('/debug-info', methods=['GET'])
+    def debug_info():
+        """Return debug information about the current setup."""
+        debug_data = {
+            "session_active": bool(flask_session),
+            "challenges_loaded": len(ui.challenges),
+            "api_url": ui.api_url,
+            "user_api_url": flask_session.get('user_api_url', None),
+            "user_token_set": bool(flask_session.get('user_token')),
+            "flask_version": Flask.__version__,
+            "has_wtforms": bool(TextAreaField),
+        }
+        return jsonify(debug_data)
     
     return app
 

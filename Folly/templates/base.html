@@ -12,6 +12,39 @@
     <!-- Preload key resources -->
     <link rel="preload" href="{{ url_for('static', filename='css/clean.css') }}" as="style">
     <link rel="preload" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" as="style">
+
+    <style>
+        /* Styles for when the application is embedded in an iframe */
+        html.in-iframe {
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+        }
+        
+        html.in-iframe body {
+            height: 100%;
+            overflow: hidden;
+        }
+        
+        html.in-iframe .sidebar {
+            position: absolute;
+        }
+        
+        html.in-iframe .main-content {
+            position: absolute;
+            left: 250px; /* Sidebar width */
+            right: 0;
+            top: 0;
+            bottom: 0;
+            overflow-y: auto;
+            height: 100%;
+        }
+        
+        html.in-iframe .chat-container {
+            max-height: calc(100% - 120px);
+            overflow-y: auto;
+        }
+    </style>
 </head>
 <body class="{% if request.cookies.get('darkMode') == 'true' %}dark-mode{% endif %}">
     <div class="sidebar">
@@ -96,9 +129,17 @@
         </div>
     </div>
 
+    <!-- Removed reference to simple-ajax.js -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
     
     <script>
+        // Check if page is in an iframe
+        const isInIframe = window !== window.parent;
+        if (isInIframe) {
+            document.documentElement.classList.add('in-iframe');
+            console.log('Running in iframe mode');
+        }
+        
         function toggleDarkMode() {
             document.body.classList.toggle('dark-mode');
             const isDarkMode = document.body.classList.contains('dark-mode');

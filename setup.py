@@ -25,6 +25,7 @@ setup(
         "fuzzywuzzy>=0.18.0",
         "python-Levenshtein>=0.12.0",  # For better performance with fuzzywuzzy
         "wtforms>=3.0.0",
+        "gunicorn>=20.1.0",  # For production deployments
     ],
     entry_points={
         "console_scripts": [
