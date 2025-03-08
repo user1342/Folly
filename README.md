@@ -4,6 +4,18 @@
 </p>
 <p align="center"> 🏰 Folly - LLM Prompt Injection Testing - A Flask-based tool for testing prompt injection and jailbreaking attacks against different LLM APIs. ⚔️ </p>
 
+<div align="center">
+    
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/18IribXzaeWUHyYdXkW0xiHYUdzwtaerW?usp=sharing)
+![GitHub contributors](https://img.shields.io/github/contributors/user1342/Folly)
+![GitHub Repo stars](https://img.shields.io/github/stars/user1342/Folly?style=social)
+![GitHub watchers](https://img.shields.io/github/watchers/user1342/Folly?style=social)
+![GitHub last commit](https://img.shields.io/github/last-commit/user1342/Folly)
+<br>
+
+</div>
+
+
 ## ✨ Overview
 
 This tool provides:
