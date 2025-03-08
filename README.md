@@ -1,10 +1,8 @@
-| 🏰 Folly - LLM Prompt Injection Testing - A Flask-based tool for testing prompt injection and jailbreaking attacks against different LLM APIs.
-| --- |
-
-<div align="center">
-  <img src="Folly.png" alt="Folly UI Overview" width="70%">
-  <p><em>The Folly challenge interface</em></p>
-</div>
+<p align="center">
+    <img width=100% src="folly-logo.png">
+  </a>
+</p>
+<p align="center"> 🏰 Folly - LLM Prompt Injection Testing - A Flask-based tool for testing prompt injection and jailbreaking attacks against different LLM APIs. ⚔️ </p>
 
 ## ✨ Overview
 
@@ -13,6 +11,11 @@ This tool provides:
 - 🖥️ A web UI for interacting with challenges in a user-friendly way
 - ⚙️ Configuration-based challenge definitions
 - 🛡️ Support for various prompt injection and jailbreaking techniques
+
+<div align="center">
+  <img src="Folly.png" alt="Folly UI Overview" width="70%">
+  <p><em>The Folly challenge interface</em></p>
+</div>
 
 ## 📦 Installation
 
@@ -62,7 +65,6 @@ folly-ui http://localhost:4000 --port 5001 --no-browser
    ```bash
    folly-api https://api.openai.com/v1 --api-key sk-your-key-here --model gpt-4 prompt_injection_masterclass.json
    ```
-3. Available models include: `gpt-3.5-turbo`, `gpt-4`, `gpt-4-turbo`
 
 ### Ollama (Local LLMs) 🏠
 
@@ -75,7 +77,11 @@ folly-ui http://localhost:4000 --port 5001 --no-browser
    ```bash
    folly-api http://localhost:11434/v1 --model llama3.1 prompt_injection_masterclass.json
    ```
-4. Available models depend on what you've pulled with Ollama
+
+<div align="center">
+  <img src="folly-gif.gif" alt="Folly UI Overview" width="70%">
+  <p><em>The Folly challenge interface</em></p>
+</div>
 
 ## 🛠️ Creating Custom Challenges
 
@@ -96,12 +102,6 @@ Create a JSON file with challenges using the following structure:
   }
 ]
 ```
-
-<div align="center">
-  <img src="folly-gif.gif" alt="Folly UI Overview" width="70%">
-  <p><em>The Folly challenge interface</em></p>
-</div>
-
 
 ### 📋 Challenge Configuration Fields
 
