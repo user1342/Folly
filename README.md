@@ -20,7 +20,7 @@ This tool provides:
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/folly.git
+git clone https://github.com/user1342/folly.git
 cd folly
 
 # Install the package in development mode
