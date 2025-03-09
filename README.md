@@ -88,12 +88,6 @@ ollama pull llama3.1
 folly-api http://localhost:11434/v1 --model llama3.1 challenges.json --port 5000
 ```
 
-### Azure OpenAI Service
-
-```bash
-folly-api https://your-resource.openai.azure.com/openai/deployments/your-deployment --api-key your_api_key --model deployment-name challenges.json --port 5000
-```
-
 ## User Interfaces
 
 Folly provides multiple ways to interact with LLM challenges:
