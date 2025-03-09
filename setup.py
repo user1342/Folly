@@ -26,11 +26,13 @@ setup(
         "python-Levenshtein>=0.12.0",  # For better performance with fuzzywuzzy
         "wtforms>=3.0.0",
         "gunicorn>=20.1.0",  # For production deployments
+        "rich>=10.0.0",      # For CLI interface
     ],
     entry_points={
         "console_scripts": [
             "folly-api=Folly.api:main",
             "folly-ui=Folly.ui_app:main",
+            "folly-cli=Folly.cli:main",  # CLI entry point
         ],
     },
     classifiers=[

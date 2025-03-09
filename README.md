@@ -204,3 +204,45 @@ print(response.json())
 |----------|-------------|
 | `api_url` | URL of the LLM Challenge API (required) |
 | `--port` or `-p` | Port to run the UI server (default: 5001) |
+
+## 💻 Using the CLI Interface
+
+The CLI interface provides a terminal-based way to interact with challenges:
+
+```bash
+# Basic usage
+folly-cli http://localhost:4000
+
+# With API key (if required)
+folly-cli http://localhost:4000 --api-key your_api_key
+
+# Start directly with a specific challenge
+folly-cli http://localhost:4000 --challenge "system_prompt_extraction"
+
+# Disable colored output
+folly-cli http://localhost:4000 --no-color
+```
+
+### CLI Main Menu Commands
+
+The main menu allows you to select and manage challenges:
+
+- **1-N**: Select a challenge by its number
+- **r**: Refresh the list of challenges
+- **c**: Clear your completed challenges history
+- **q** or **e**: Quit the application
+- **h** or **?**: Display help information
+
+### Challenge Conversation Commands
+
+During a challenge conversation, use these commands:
+
+- **/help**: Show available commands
+- **/exit**: Exit the current challenge conversation
+- **/reset**: Reset the current challenge conversation
+- **/status**: Check completion status of the current challenge
+- **/clear**: Clear the screen
+- Type your prompt and press Enter to submit it to the LLM
+
+The CLI automatically validates responses and saves your progress in `~/.folly/cli_state.json`.
+You can also export conversations to JSON files in `~/folly_exports/`.
