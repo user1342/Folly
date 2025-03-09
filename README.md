@@ -26,6 +26,7 @@ Folly provides security professionals, developers, and researchers with a compre
 - **Multi-Provider Support**: Test different LLM services with consistent methodology
 - **Challenge Library**: Pre-built security scenarios with configurable parameters
 - **Web Interface**: User-friendly environment for testing and evaluation
+- **Command Line Interface**: Terminal-based testing with rich formatting and interactive commands
 - **API-First Design**: Automate testing through comprehensive API endpoints
 
 ## Installation
@@ -46,10 +47,11 @@ pip install -e .
 
 ## Getting Started
 
-Folly consists of two primary components:
+Folly consists of three primary components:
 
 1. **API Server**: Handles LLM communication and challenge validation
 2. **UI Server**: Provides a web interface for interactive testing
+3. **CLI Tool**: Terminal-based interface for running challenges
 
 ### Quick Start
 
@@ -57,8 +59,11 @@ Folly consists of two primary components:
 # Start the API server (connects to OpenAI)
 folly-api https://api.openai.com/v1 --api-key your_api_key --model gpt-4 challenges.json
 
-# Launch the UI in your browser
+# Launch the web UI in your browser
 folly-ui http://localhost:5000
+
+# Or use the command-line interface
+folly-cli http://localhost:5000
 ```
 
 <div align="center">
@@ -88,6 +93,59 @@ folly-api http://localhost:11434/v1 --model llama3.1 challenges.json --port 5000
 ```bash
 folly-api https://your-resource.openai.azure.com/openai/deployments/your-deployment --api-key your_api_key --model deployment-name challenges.json --port 5000
 ```
+
+## User Interfaces
+
+Folly provides multiple ways to interact with LLM challenges:
+
+### Web Interface
+
+The web UI provides a graphical environment for working with challenges:
+
+```bash
+folly-ui http://localhost:5000 --port 5001
+```
+
+### Command Line Interface
+
+The CLI offers a rich terminal-based experience with similar capabilities:
+
+```bash
+# Basic usage
+folly-cli http://localhost:5000
+
+# With API key authentication
+folly-cli http://localhost:5000 --api-key your_api_key
+
+# Start directly with a specific challenge
+folly-cli http://localhost:5000 --challenge "system_prompt_extraction"
+```
+
+#### CLI Features
+
+- Interactive challenge selection from a formatted table
+- Rich formatting for challenge descriptions and responses
+- Command-driven conversation interface with slash commands
+- Response validation with clear success/failure indicators
+- Progress tracking across challenges
+- Conversation export to JSON files
+
+#### CLI Commands
+
+When in the main menu:
+- **1-N**: Select a challenge by number
+- **r**: Refresh the challenge list
+- **c**: Clear completed challenges
+- **h** or **?**: Display help information
+- **q** or **e**: Exit the application
+
+During a challenge conversation:
+- **/help**: Show available commands
+- **/exit**: Return to challenge selection
+- **/reset**: Clear the current conversation history
+- **/status**: Display challenge completion status
+- **/clear**: Clear the terminal screen
+- Type any text to submit a prompt to the LLM
 
 ## Creating Custom Challenges
 
@@ -244,6 +302,18 @@ folly-ui <api_url> [options]
 |--------|-------------|---------|
 | `--port`, `-p` | Port for the UI server | 5001 |
 | `--no-browser` | Don't open browser automatically | False |
+
+### CLI Tool
+
+```bash
+folly-cli <api_url> [options]
+```
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--api-key`, `-k` | Authentication key for LLM provider | None |
+| `--no-color` | Disable colored output | False |
+| `--challenge`, `-c` | Start with a specific challenge | None |
 
 ## Contributing
 
