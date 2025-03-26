@@ -1,1 +1,1 @@
-web: ./quick_start.sh
+web: chmod +x quick_start.sh && ./quick_start.sh
