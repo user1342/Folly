@@ -13,7 +13,7 @@ pip install git+https://github.com/user1342/folly
 git clone https://github.com/user1342/folly.git
 
 # Start the folly API using OpenAI's ChatGPT API
-nohup folly-api "https://api.openai.com/v1" --model "gpt-4" --api-key "$CHATGPT_API_KEY" folly/example_challenges/prompt_injection_masterclass.json > output.log 2>&1 & disown
+folly-api "https://api.openai.com/v1" --model "gpt-4" --api-key "$CHATGPT_API_KEY" folly/example_challenges/prompt_injection_masterclass.json > output.log &
 
 echo "Folly API now running with ChatGPT."
 
