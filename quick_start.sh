@@ -18,5 +18,5 @@ nohup folly-api "https://api.openai.com/v1" --model "gpt-4" --api-key "$CHATGPT_
 echo "Folly API now running with ChatGPT."
 
 # Start the folly UI
-folly-ui "http://localhost:8000"
+folly-ui "http://localhost" --port 8000
 
