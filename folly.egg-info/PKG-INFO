@@ -1,0 +1,38 @@
+Metadata-Version: 2.4
+Name: folly
+Version: 0.1.0
+Summary: A tool for testing prompt injection and jailbreaking attacks against LLMs
+Author: JamesS
+Classifier: Development Status :: 4 - Beta
+Classifier: Environment :: Web Environment
+Classifier: Framework :: Flask
+Classifier: Intended Audience :: Developers
+Classifier: Intended Audience :: Information Technology
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python :: 3
+Classifier: Topic :: Security
+Requires-Python: >=3.7
+License-File: LICENSE
+Requires-Dist: flask>=2.0.0
+Requires-Dist: flask-wtf>=1.0.0
+Requires-Dist: flask-session>=0.4.0
+Requires-Dist: requests>=2.25.0
+Requires-Dist: openai>=1.0.0
+Requires-Dist: fuzzywuzzy>=0.18.0
+Requires-Dist: python-Levenshtein>=0.12.0
+Requires-Dist: wtforms>=3.0.0
+Requires-Dist: gunicorn>=20.1.0
+Requires-Dist: rich>=10.0.0
+Provides-Extra: test
+Requires-Dist: pytest>=6.0.0; extra == "test"
+Requires-Dist: pytest-flask>=1.2.0; extra == "test"
+Requires-Dist: pytest-mock>=3.6.0; extra == "test"
+Requires-Dist: pytest-cov>=4.0.0; extra == "test"
+Requires-Dist: responses>=0.20.0; extra == "test"
+Dynamic: author
+Dynamic: classifier
+Dynamic: license-file
+Dynamic: provides-extra
+Dynamic: requires-dist
+Dynamic: requires-python
+Dynamic: summary

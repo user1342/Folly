@@ -28,6 +28,15 @@ setup(
         "gunicorn>=20.1.0",  # For production deployments
         "rich>=10.0.0",      # For CLI interface
     ],
+    extras_require={
+        "test": [
+            "pytest>=6.0.0",
+            "pytest-flask>=1.2.0",
+            "pytest-mock>=3.6.0",
+            "pytest-cov>=4.0.0",
+            "responses>=0.20.0",
+        ],
+    },
     entry_points={
         "console_scripts": [
             "folly-api=Folly.api:main",

@@ -309,9 +309,69 @@ folly-cli <api_url> [options]
 | `--no-color` | Disable colored output | False |
 | `--challenge`, `-c` | Start with a specific challenge | None |
 
+## Testing
+
+Folly includes a comprehensive testing suite with both unit and system tests.
+
+### Quick Start
+
+```bash
+# Run all tests
+make test
+
+# Run only unit tests
+make test-unit
+
+# Run with coverage report
+make coverage
+
+# Run quick tests (fastest)
+make test-quick
+```
+
+### Using Python Test Runner
+
+```bash
+# Install test dependencies
+pip install -e ".[test]"
+
+# Run all tests
+python run_tests.py
+
+# Run specific test types
+python run_tests.py --type unit
+python run_tests.py --type system
+python run_tests.py --type integration
+
+# Generate coverage report
+python run_tests.py --coverage
+```
+
+### Test Structure
+
+- **Unit Tests** (`tests/unit/`): Fast, isolated tests with mocked dependencies
+- **System Tests** (`tests/system/`): End-to-end tests with real servers and APIs
+- **Integration Tests**: Component interaction and workflow validation
+
+For detailed testing information, see [TESTING.md](TESTING.md).
+
 ## Contributing
 
 Contributions to Folly are welcome! Please see the [Contributing Guidelines](CONTRIBUTING.md) for more information.
+
+### Development Setup
+
+```bash
+# Clone the repository
+git clone https://github.com/user1342/folly.git
+cd folly
+
+# Install in development mode with test dependencies
+pip install -e ".[test]"
+
+# Run tests to verify setup
+make test-unit
+```
 
 ## License
 
