@@ -1,0 +1,4 @@
+[console_scripts]
+folly-api = Folly.api:main
+folly-cli = Folly.cli:main
+folly-ui = Folly.ui_app:main
