@@ -309,10 +309,6 @@ folly-cli <api_url> [options]
 | `--no-color` | Disable colored output | False |
 | `--challenge`, `-c` | Start with a specific challenge | None |
 
-## Contributing
-
-Contributions to Folly are welcome! Please see the [Contributing Guidelines](CONTRIBUTING.md) for more information.
-
 ## License
 
 See the [LICENSE](LICENSE) file for details.
